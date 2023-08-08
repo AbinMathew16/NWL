@@ -1,0 +1,2268 @@
+fork() System Call
+
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+int main() {
+ pid_t pid;
+ pid = fork();
+ if (pid == 0)
+ printf("I am Child Process\n");
+ else
+ printf("I am Parent Process\n");
+}
+
+
+
+****
+
+
+exec() System Call
+
+
+exec1.c
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+int main() {
+ char *args[] = {"./exec2", NULL};
+ printf("We are using exec() system call\n");
+ execv(args[0], args);
+ printf("Back to exec1.c");
+}
+exec2.c
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+int main()
+{
+ printf("We are in exec2.c\n");
+}\
+
+
+
+****
+
+
+
+
+exit() System Call
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+int main() {
+ pid_t pid;
+ pid = fork();
+ int status;
+ if (pid == 0) {
+ printf("Child\n");
+ sleep(10);
+ exit(10);}
+ else {
+ printf("Parent\n");
+ wait(&status);
+ printf("Exit Status is %d\n", WEXITSTATUS(status));
+ }
+}
+
+
+
+
+*****
+
+
+
+
+wait() System Call
+
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+int main() {
+ pid_t pid;
+ pid = fork();
+ int status;
+ if (pid == 0) {
+ printf("Child\n");
+ sleep(10);
+ } else {
+ printf("Parent\n");
+ wait(&status);
+ printf("I am in Parent Process\n");
+ }
+}
+
+
+
+
+******
+
+
+
+
+open() and close() System Calls
+
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+int main() {
+ int fd1 = open("input.txt", O_RDONLY);
+ if (fd1 < 0)
+ {
+ perror("c1");
+ exit(1);
+ }
+ printf("Opened the fd = %d\n", fd1);
+ if (close(fd1) < 0)
+ {
+ perror("c1");
+ exit(1);
+ }
+ printf("Closed the fd\n");
+}
+
+
+
+
+******
+
+
+
+
+read() and write() System Call
+
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+int main() {
+ char buff[20];
+ int fd1 = open("input.txt", O_RDWR);
+ int fd2 = open("sample.txt", O_RDWR);
+ if (fd1 < 0) {
+ perror("c1");
+ exit(1);
+ }
+ printf("Reading file....\n\n");
+ read(fd1, buff, 20);
+ printf("Content of file is: %s\n", buff);
+ printf("\nWriting to file......\n");
+ write(fd2, buff, sizeof(buff));
+ printf("Written successfully.\n");
+ if (close(fd1) < 0) {
+ perror("c1");
+ exit(1);
+ }
+}
+input.txt
+Computer Networks
+sample.txt
+Computer Networks
+
+
+
+
+*******
+
+
+
+
+Implementation of Client-Server communication using Socket Programming and
+TCP as transport layer protocol
+
+
+Aim: Client sends a string to the server using tcp protocol. The server reverses the string and returns
+it to the client, which then displays the reversed string.
+Description:
+
+Steps for creating a TCP connection by a client are:
+
+1. Creation of client socket
+
+int socket(int domain, int type, int protocol);
+This function call creates a socket and returns a socket descriptor. The domain parameter specifies a
+communication domain; this selects the protocol family which will be used for communication. These
+families are defined in <sys/socket.h>. In this program, the domain AF_INET is used. The socket has
+the indicated type, which specifies the communication semantics. SOCK_STREAM type provides
+sequenced, reliable, two-way, connection based byte streams. The protocol field specifies the protocol
+used. We always use 0. If the system call is a failure, a -1 is returned. The header files used are
+sys/types.h and sys/socket.h.
+
+2. Filling the fields of the server address structure.
+The socket address structure is of type struct sockaddr_in.
+struct sockaddr_in {
+};
+u_short sin_family;
+u_short sin_port;
+struct in_addr sin_addr;
+char sin_zero[8]; /*unused, always zero*/
+struct in_addr
+{
+};
+u_long s_addr;
+The fields of the socket address structure are
+sin_family which in our case is AF_INET
+sin_port which is the port number where socket binds
+sin_addr which is the IP address of the server machine
+The header file that is to be used is netinet/in.h
+struct sockaddr_in servaddr;
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(port_number);
+Why htons is used ?. Numbers on different machines may be represented differently ( big-endian
+machines and little-endian machines). In a little-endian machine the low order byte of an integer
+appears at the lower address; in a big-endian machine instead the low order byte appears at the higher
+address. Network order, the order in which numbers are sent on the internet is big-endian. It is
+necessary to ensure that the right representation is used on each machine. Functions are used to convert
+from host to network form before transmission- htons for short integers and htonl for long integers.
+The value for servaddr.sin_addr is assigned using the following function
+inet_pton(AF_INET, “IP_Address”, &servaddr.sin_addr);
+The binary value of the dotted decimal IP address is stored in the field when the function returns.
+
+3. Binding of the client socket to a local port
+This is optional in the case of client and we usually do not use the bind function on the client side.
+
+4. Connection of client to the server
+A server is identified by an IP address and a port number. The connection operation is used on the
+client side to identify and start the connection to the server.
+int connect(int sd, struct sockaddr * addr, int addrlen);
+sd – file descriptor of local socket
+addr – pointer to protocol address of other socket
+addrlen – length in bytes of address structure
+The header files to be used are sys/types.h and sys/socket.h
+It returns 0 on sucess and -1 in case of failure.
+
+5. Reading from socket
+In the case of TCP connection reading from a socket can be done using the read system call
+int read(int sd, char * buf, int length);
+
+6. writing to a socket
+In the case of TCP connection writing to a socket can be done using the write system call
+int write( int sd, char * buf, int length);
+
+7. closing the connection
+The connection can be closed using the close system call
+int close( int sd);
+
+
+Steps for TCP Connection for server
+
+1. Creating a listening socket
+int socket( int domain, int type, int protocol);
+This system call creates a socket and returns a socket descriptor. The domain field used is AF_INET.
+The socket type is SOCK_STREAM. The protocol field is 0. If the system call is a failure, a -1 is
+returned. Header files used are sys/types.h and sys/socket.h.
+
+2. Binding to a local port
+int bind(int sd, struct sockaddr * addr, int addrlen);
+This call is used to specify for a socket the protocol port number where it will wait for messages. A
+call to bind is optional on the client side, but required on the server side. The first field is the socket
+descriptor of local socket. Second is a pointer to protocol address structure of this socket. The third is
+the length in bytes of the structure referenced by addr. This system call returns an integer. It is 0
+for success and -1 for failure. The header files are sys/types.h and sys/socket.h.
+
+3. Listening on the port
+The listen function is used on the server in the connection oriented communication to prepare a socket
+to accept messages from clients.
+int listen(int fd, int qlen);
+fd – file descriptor of a socket that has already been bound
+qlen – specifies the maximum number of messages that can wait to be processed by the server while
+the server is busy servicing another request. Usually it is taken as 5. The header files used are
+sys/types.h and sys/socket.h. This function returns 0 on success and -1 on failure.
+
+4. Accepting a connection from the client
+The accept function is used on the server in the case of connection oriented communication to accept a
+connection request from a client.
+int accept( int fd, struct sockaddr * addressp, int * addrlen);
+The first field is the descriptor of server socket that is listening. The second parameter addressp points to a
+socket address structure that will be filled by the address of calling client when the function returns.
+The third parameter addrlen is an integer that will contain the actual length of address structure of
+client. It returns an integer that is a descriptor of a new socket called the connection socket. Server sockets
+send data and read data from this socket. The header files used are sys/types.h and sys/socket.h.
+
+
+Algorithm
+
+Client
+1. Create socket
+2. Connect the socket to the server
+3. Read the string to be reversed from the standard input and send it
+to the server Read the matrices from the standard input and send it to server
+using socket
+4. Read the reversed string from the socket and display it on the
+standard output Read product matrix from the socket and display it on the
+standard output
+5. Close the socket
+
+Server
+1. Create listening socket
+2. bind IP address and port number to the socket
+3. listen for incoming requests on the listening socket
+4. accept the incoming request
+5. connection socket is created when accept returns
+6. Read the string using the connection socket from the client
+7. Reverse the string
+8. Send the string to the client using the connection socket
+9. close the connection socket
+10. close the listening socket
+
+
+---------------------------------------------------------------------
+
+
+ Client Program
+#include<stdio.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<fcntl.h>
+#include<string.h>
+#include<stdlib.h>
+#include<unistd.h>
+int main( int argc, char *argv[])
+{
+struct sockaddr_in server;
+int sd ;
+char buffer[200];
+if((sd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+{
+perror("Socket failed:");
+exit(1);
+}
+// server socket address structure initialisation
+bzero(&server, sizeof(server) );
+server.sin_family = AF_INET;
+server.sin_port = htons(atoi(argv[2]));
+inet_pton(AF_INET, argv[1], &server.sin_addr);
+if(connect(sd, (struct sockaddr *)&server, sizeof(server))< 0)
+{
+perror("Connection failed:");
+exit(1);
+}
+fgets(buffer, sizeof(buffer), stdin);
+buffer[strlen(buffer) - 1] = '\0';
+write (sd,buffer, sizeof(buffer));
+read(sd,buffer, sizeof(buffer));
+printf("%s\n", buffer);
+close(fd);
+}
+
+
+ Server Program
+
+
+#include<stdio.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<fcntl.h>
+#include<string.h>
+#include<stdlib.h>
+#include<unistd.h>
+int main( int argc, char *argv[])
+{
+struct sockaddr_in server, cli;
+int cli_len;
+int sd, n, i, len;
+int data, temp;
+char buffer[100];
+if((sd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+{
+perror("Socket failed:");
+exit(1);
+}
+// server socket address structure initialisation
+bzero(&server, sizeof(server) );
+server.sin_family = AF_INET;
+server.sin_port = htons(atoi(argv[1]));
+server.sin_addr.s_addr = htonl(INADDR_ANY);
+if(bind(sd, (struct sockaddr*)&server, sizeof(server)) < 0)
+{
+perror("bind failed:");
+exit(1);
+}
+listen(sd,5);
+if((data = accept(sd , (struct sockaddr *) &cli, &cli_len)) < 0)
+{
+perror("accept failed:");
+exit(1);
+}
+read(data,buffer, sizeof(buffer));
+len = strlen(buffer);
+for( i =0; i<= len/2; i++)
+{
+temp = buffer[i];
+buffer[i] = buffer[len - 1-i];
+buffer[len-1-i] = temp;
+}
+write (data,buffer, sizeof(buffer));
+close(data);
+close(sd);
+}
+
+
+
+
+
+
+
+******
+
+
+
+
+
+
+Implementation of Client-Server communication using Socket Programming and
+ UDP as transport layer protocol
+
+
+Aim: Client sends two matrices to the server using udp protocol. The server multiplies the matrices
+and sends the product to the client, which then displays the product matrix.
+Description:
+ Steps for transfer of data using UDP
+
+
+1. Creation of UDP socket
+
+The function call for creating a UDP socket is
+int socket(int domain, int type, int protocol);
+The domain parameter specifies a communication domain; this selects the protocol family which will
+be used for communication. These families are defined in <sys/socket.h>. In this program, the domain
+AF_INET is used. The next field type has the value SOCK_DGRAM. It supports datagrams
+(connectionless, unreliable messages of a fixed maximum length). The protocol field specifies the
+protocol used. We always use 0. If the socket function call is successful, a socket descriptor is
+returned. Otherwise -1 is returned. The header files necessary for this function call are sys/types.h and
+sys/socket.h.
+
+
+2. Filling the fields of the server address structure.
+
+The socket address structure is of type struct sockaddr_in.
+struct sockaddr_in {
+};
+u_short sin_family;
+u_short sin_port;
+struct in_addr sin_addr;
+char sin_zero[8]; /*unused, always zero*/
+struct in_addr {
+u_long s_addr;
+};
+The fields of the socket address structure are
+sin_family which in our case is AF_INET
+sin_port which is the port number where socket binds
+sin_addr is used to store the IP address of the server machine and is of type struct in_addr
+The header file that is to be used is netinet/in.h
+The value for servaddr.sin_addr is assigned using the following function
+inet_pton(AF_INET, “IP_Address”, &servaddr.sin_addr);
+The binary value of the dotted decimal IP address is stored in the field when the function returns.
+
+
+3. Binding of a port to the socket in the case of server
+
+This call is used to specify for a socket the protocol port number where it will wait for messages. A
+call to bind is optional in the case of client and compulsory on the server side.
+int bind(int sd, struct sockaddr* addr, int addrlen);
+The first field is the socket descriptor. The second is a pointer to the address structure of this socket.
+The third field is the length in bytes of the size of the structure referenced by addr. The header files are
+sys/types.h and sys/socket.h. This function call returns an integer, which is 0 for success and -1 for
+failure.
+
+
+4. Receiving data
+
+ssize_t recvfrom(int s, void * buf, size_t len, int flags, struct sockaddr * from, socklen_t *
+fromlen);
+The recvfrom calls are used to receive messages from a socket, and may be used to receive data on a
+socket whether or not it is connection oriented. The first parameter s is the socket descriptor to read
+from. The second parameter buf is the buffer to read information into. The third parameter len is the
+maximum length of the buffer. The fourth parameter is flag. It is set to zero. The fifth parameter from
+is a pointer to struct sockaddr variable that will be filled with the IP address and port of the
+orginating machine. The sixth parameter fromlen is a pointer to a local int variable that should be
+initialized to sizeof(struct sockaddr). When the function returns, the integer variable that fromlen points
+to will contain the actual number of bytes that is contained in the socket address structure. The
+header files required are sys/types.h and sys/socket.h. When the function returns, the number of bytes
+received is returned or -1 if there is an error.
+
+
+5. Sending data
+
+sendto- sends a message from a socket
+ssize_t sendto(int s, const void * buf, size_t len, int flags, const struct sockaddr * to, socklen_t
+tolen);
+The first parameter s is the socket descriptor of the sending socket. The second parameter buf is the
+array which stores data that is to be sent. The third parameter len is the length of that data in bytes. The
+fourth parameter is the flag parameter. It is set to zero. The fifth parameter to points to a variable that
+contains the destination IP address and port. The sixth parameter tolen is set to sizeof(struct
+sockaddr). This function returns the number of bytes actually sent or -1 on error. The header files used
+are sys/types.h and sys/socket.h.
+
+Algorithm
+
+Client
+
+1. Create socket
+2. Read the matrices from the standard input and send it to server using socket
+3. Read product matrix from the socket and display it on the standard output
+4. Clos
+e the socket
+
+Server
+
+5. Create socket
+6. bind IP address and port number to the socket
+7. Read the matrices socket from the client using socket
+8. Find product of matrices
+9. Send the product matrix to the client using socket
+10. close the socket
+
+
+
+Client program
+
+
+#include<stdio.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<fcntl.h>
+#include<stdlib.h>
+main(int argc, char * argv[])
+{
+int i,j,n;
+int sock_fd;
+struct sockaddr_in servaddr;
+int matrix_1[10][10], matrix_2[10][10], matrix_product[10][10];
+int size[2][2];
+int num_rows_1, num_cols_1, num_rows_2, num_cols_2;
+if(argc != 3)
+{
+fprintf(stderr, "Usage: ./client IPaddress_of_server port\n");
+exit(1);
+}
+printf("Enter the number of rows of first matrix\n");
+scanf("%d", &num_rows_1);
+printf("Enter the number of columns of first matrix\n");
+scanf("%d", &num_cols_1);
+printf("Enter the values row by row one on each line\n" );
+for ( i = 0; i < num_rows_1; i++)
+for( j=0; j<num_cols_1; j++)
+{
+scanf("%d", &matrix_1[i][j]);
+}
+size[0][0] = num_rows_1;
+size[0][1] = num_cols_1;
+printf("Enter the number of rows of second matrix\n");
+scanf("%d", &num_rows_2);
+printf("Enter the number of columns of second matrix\n");
+scanf("%d", &num_cols_2);
+if( num_cols_1 != num_rows_2)
+{
+printf("MATRICES CANNOT BE MULTIPLIED\n");
+exit(1);
+}
+printf("Enter the values row by row one on each line\n");
+for (i = 0; i < num_rows_2; i++)
+for(j=0; j<num_cols_2; j++)
+{scanf("%d", &matrix_2[i][j]);
+}
+size[1][0] = num_rows_2;
+size[1][1] = num_cols_2;
+if((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+{
+printf("Cannot create socket\n");
+exit(1);
+}
+bzero((char*)&servaddr, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(atoi(argv[2]));
+inet_pton(AF_INET, argv[1], &servaddr.sin_addr);
+// SENDING MATRIX WITH SIZES OF MATRICES 1 AND 2
+n = sendto(sock_fd, size, sizeof(size),0, (struct sockaddr*)&servaddr, sizeof(servaddr));
+if( n < 0)
+{
+perror("error in matrix 1 sending");
+exit(1);
+}
+// SENDING MATRIX 1
+n = sendto(sock_fd, matrix_1, sizeof(matrix_1),0, (struct sockaddr*)&servaddr, sizeof(servaddr));
+if( n < 0)
+{
+perror("error in matrix 1 sending");
+exit(1);
+}
+// SENDING MATRIX 2
+n = sendto(sock_fd, matrix_2, sizeof(matrix_2),0, (struct sockaddr*)&servaddr, sizeof(servaddr));
+if( n < 0)
+{
+ perror("error in matrix 2 sending");
+exit(1);}
+if((n=recvfrom(sock_fd, matrix_product, sizeof(matrix_product),0, NULL, NULL)) == -1)
+{
+perror("read error from server:");
+exit(1);
+}
+printf("\n\nTHE PRODUCT OF MATRICES IS \n\n\n");
+for( i=0; i < num_rows_1; i++)
+{
+for( j=0; j<num_cols_2; j++)
+{
+printf("%d ",matrix_product[i][j]);
+}
+printf("\n");
+}
+close(sock_fd);
+}
+
+
+Server Program
+
+
+
+#include<stdio.h>
+#include<string.h>
+#include<sys/socket.h>
+#include<sys/types.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include<fcntl.h>
+#include<stdlib.h>
+main(int argc, char * argv[])
+{
+int n;
+int sock_fd;
+int i,j,k;
+ int row_1, row_2, col_1, col_2;
+ struct sockaddr_in servaddr,
+cliaddr;
+int len = sizeof(cliaddr);
+int matrix_1[10][10], matrix_2[10][10], matrix_product[10][10];
+int size[2][2];
+if(argc != 2)
+{
+fprintf(stderr, "Usage: ./server port\n");
+exit(1);
+}
+if((sock_fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+{
+printf("Cannot create socket\n");
+exit(1);
+}
+bzero((char*)&servaddr, sizeof(servaddr));
+servaddr.sin_family = AF_INET;
+servaddr.sin_port = htons(atoi(argv[1]));
+ servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+if(bind(sock_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
+{
+perror("bind failed:");
+exit(1);
+}
+// MATRICES RECEIVE
+if((n = recvfrom(sock_fd, size, sizeof(size), 0, (struct sockaddr *)&cliaddr, &len)) == -1)
+{
+perror("size not received:");
+exit(1);
+}
+// RECEIVE MATRIX 1
+if((n = recvfrom(sock_fd, matrix_1, sizeof(matrix_1), 0, (struct sockaddr *)&cliaddr, &len)) == -1)
+{
+perror("matrix 1 not received:");
+exit(1);
+}
+// RECEIVE MATRIX 2
+if((n = recvfrom(sock_fd, matrix_2, sizeof(matrix_2), 0, (struct sockaddr *)&cliaddr, &len)) == -1)
+{
+perror("matrix 2 not received:");
+exit(1);
+}
+row_1 = size[0][0];
+col_1 = size[0][1];
+row_2 = size[1][0];
+col_2 = size[1][1];
+for (i =0; i < row_1 ; i++)
+for (j =0; j <col_2; j++)
+{
+matrix_product[i][j] = 0;
+}
+for(i =0; i< row_1 ; i++)
+for(j=0; j< col_2 ; j++)
+for (k=0; k < col_1; k++)
+{
+matrix_product[i][j] += matrix_1[i][k]*matrix_2[k][j];
+}
+n = sendto(sock_fd, matrix_product, sizeof(matrix_product),0, (struct sockaddr*)&cliaddr,
+sizeof(cliaddr));
+if( n < 0)
+{
+perror("error in matrix product sending");
+exit(1);
+}
+close(sock_fd);
+}
+
+
+
+
+
+
+
+*******
+
+
+
+
+
+
+
+Sliding Window Flow Control Protocol
+
+Stop and Wait
+
+algorithm
+sender
+
+1 input number of fframes and window size
+2 set sequence bit to 0
+3 for all packets
+a send packet,start timer
+b if acknowledgement is recieved,check sequence bit,send next packet if sequence bit is proper
+c else repeat sending
+
+reciever
+
+1 set sequence bit to 0
+2 for packets recieved
+a if sequence bit matchees ,send ACK with next bit
+b else reject packet
+c update sequence bit
+3 stop
+
+code
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+int main(int argc, char* argv[])
+{
+srand(time(NULL));
+int sspace = 3;
+int sender_seq_bit=0, receiver_seq_bit=0;
+int transmit_packet=0, transmit_seq=-1;
+int sender_left=10, sender_packet=0;
+while(sender_left > 0)
+{
+//send packet
+transmit_seq = sender_seq_bit;
+transmit_packet = sender_packet;
+printf("\nSender sent packet %d with sequence %d.\n",sender_packet,
+sender_seq_bit);
+if(rand()%sspace != 0)
+{
+//receive packet
+printf("Receiver received %d with sequence %d.\n",transmit_packet,
+transmit_seq );
+if(transmit_seq != receiver_seq_bit)
+{
+transmit_packet = 0;
+transmit_seq = receiver_seq_bit;
+printf("Receiver discards packet.\n");
+}
+else
+{
+receiver_seq_bit = 1-receiver_seq_bit;
+transmit_seq = receiver_seq_bit;
+transmit_packet = 0;
+printf("Receiver sends ack with bit %d\n", transmit_seq);
+}
+}
+else
+{
+//packet lost
+printf("Packet %d lost.\n", transmit_packet);
+transmit_packet = -1;
+transmit_seq = -1;
+}
+if(transmit_packet>=0)
+{
+if(rand()%sspace != 0)
+{
+//sender receives ack
+printf("Sender received ACK with sequence %d.\n",
+transmit_seq );
+if(transmit_seq != sender_seq_bit)
+{
+// correct ack
+sender_left-=1;
+sender_packet += 1;
+sender_seq_bit = 1 - sender_seq_bit;
+}
+}
+else
+{
+//packet lost
+printf("ACK lost.\n");
+}
+}
+transmit_seq = -1;
+transmit_packet = -1;
+}
+return 0;
+}
+
+
+
+**
+
+
+
+Go back N
+
+algorithm
+sender
+
+1 set a 3 bit sequence number
+2 create window of size 2^3 - 1
+3 send the packets
+a send packets in window
+b if acknowldmnt received check sequence number
+c shift window to sequence number
+
+reciever
+
+1 set next sequenc enumber to 0
+2 recieve packets 
+a if packet sequence number matches this sequence number ,accept and update sequence numbers,send acknwldgmnt
+c else reject packets
+
+code
+
+#include<stdio.h>
+#include<time.h>
+#define fail_limit 3
+int fr,win_siz,err_no;
+int err[100];
+int sh=1,st=1,rh=0,rt=1;
+int fail_con=0,fail[100],f=0,ack_f=fail_limit;
+void read_val();
+void assign(int arr[]);
+void send();
+void recive();
+void main(){
+ read_val();
+ // int sent[fr],rec[fr];
+ // assign(sent);
+ assign(fail);
+ printf("Sender,reciever and ack_fail\n");
+ while(sh<=fr){
+ send();
+ recive();
+ printf("\n");
+ }
+}
+void read_val(){
+ printf("Number of frames: ");
+ scanf("%d",&fr);
+ fr++;
+ printf("Window size: ");
+ scanf("%d",&win_siz);
+ printf("Number of errors: ");
+ scanf("%d",&err_no);
+ printf("Error numbers: ");
+ for(int i=0;i<err_no;i++)
+ scanf("%d",&err[i]);
+}
+void assign(int arr[]){
+ for(int i=0;i<fr;i++)
+ arr[i]=0;
+}
+void send(){
+ if(fail_con==1){
+ ack_f--;
+ }
+ if(ack_f<fail_limit && sh>=fr){
+ ack_f=0;
+ }
+ if(ack_f<=0){
+ printf("\nRetransmmiting %d\n\n",sh-fail_limit-1);
+ ack_f=fail_limit;
+ fail_con=0;
+ sh-=fail_limit;
+ st-=fail_limit;
+ }
+ for(int i=sh;i<fr && i<sh+win_siz;i++){
+ printf("%d ",i);
+ fflush(stdout);
+ }
+ printf("\t");
+ sh++;
+}
+void recive(){
+ if(fail_con==1){
+ for(int k=rh-1;k<rh+win_siz-1;k++){
+ printf("%d ",k);
+ }
+ printf("\t");
+fail[f]=fail[f-1]+1;
+f++;
+for(int u=0;u<f;u++){
+printf("%d ",fail[u]);
+fflush(stdout);
+}
+ return;
+ }
+ for(int i=rh;fr && i<=rt;i++){
+ for(int j=0;j<err_no;j++){
+ if(i==err[j]){
+ for(int k=rh-1;k<rh+win_siz-1;k++){
+ printf("%d ",k);
+ }
+ printf("\t");
+ fail_con=1;
+fail[f++]=i;
+printf("%d",i);
+fflush(stdout);
+ err[j]=-1;
+ return;
+ }
+ }
+ }
+ if(rh==0){
+ rh++;
+ printf("\t");
+ return;
+ }
+ for(int i=rh;i<fr && i<=rt;i++){
+ printf("%d ",i);
+ fflush(stdout);
+ }
+ printf("\t");
+ if(1+rt-rh<win_siz){
+ rt++;
+ }
+ else{
+ rt++;
+ rh++;
+ }
+}
+
+
+
+
+**
+
+
+
+
+Selective Repeat
+
+algorithm 
+sender
+
+1 start
+2 set sequence bit size to 3
+3 create a sending window of size 2^3-1 =4
+4 send packets
+a for each packet not acknowledged,send it in regular intervals
+b mark packets acknowledged as recieved
+c shift window rightwards as leftmost packets are acknowledged
+5 stop
+
+reciever
+
+1 start
+2 set sequence bit to size 3
+3 create sending window osf size 2^3-1 = 4
+4 recieve packets
+a for each packet recieved,check seque number
+b if in  recieveing window,send acknowledgement ,else reject
+
+code
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+int main(int argc, char* argv[])
+{
+srand(time(NULL));
+int sspace = 6;
+int seq_size = 4;
+int sender_packets[] = {0, 1, 2, 3, 4, 5};
+int total_size=6;
+int sender_seq=0, receiver_seq=0;
+int transmit_packet=0, transmit_seq=-1;
+int sender_packet=0, sender_win_start=0;
+int sender_start_seq=0;
+int sender_pos=0;
+while(sender_win_start < total_size)
+{
+//send packet
+if((sender_pos-sender_win_start >= seq_size-1) ||
+(sender_pos+sender_win_start >= total_size))
+{
+sender_pos=0;
+sender_seq = sender_start_seq;
+}
+transmit_seq = sender_seq;
+transmit_packet = sender_packets[sender_win_start+sender_pos];
+printf("\n");
+for(int i=0; i<seq_size-1; i++)
+{
+if(i+sender_win_start < total_size)
+printf("%d ", sender_packets[i+sender_win_start]);
+}
+printf("\nSender sent packet %d with sequence %d.\n",transmit_packet,
+transmit_seq);
+sender_seq = (sender_seq+1)%seq_size;
+sender_pos++;
+if(rand()%sspace != 0)
+{
+//receive packet
+printf("Receiver received %d with sequence %d.\n",transmit_packet,
+transmit_seq );
+if(transmit_seq != receiver_seq)
+{
+transmit_packet = 0;
+transmit_seq = receiver_seq;
+printf("Receiver discards packet.\n");
+}
+else
+{
+receiver_seq = (receiver_seq+1)%seq_size;
+transmit_seq = receiver_seq;
+transmit_packet = 0;
+printf("Receiver sends ack with sequence %d\n", transmit_seq);
+}
+}
+else
+{
+//packet lost
+printf("Packet %d lost.\n", transmit_packet);
+transmit_packet = -1;
+transmit_seq = -1;
+}
+if(transmit_packet>=0)
+{
+if(rand()%sspace != 0)
+{
+//sender receives ack
+printf("Sender received ACK with sequence %d.\n",
+transmit_seq );
+if(transmit_seq >= sender_start_seq)
+sender_win_start += transmit_seq-sender_start_seq;
+else
+sender_win_start += seq_size+transmit_seqsender_start_seq;
+sender_start_seq = transmit_seq;
+sender_seq = transmit_seq;
+sender_pos = 0;
+}
+else
+{
+//packet lost
+printf("ACK lost.\n");
+}
+}
+transmit_seq = -1;
+transmit_packet = -1;
+}
+return 0;
+}
+
+
+
+
+
+
+************
+
+
+
+
+
+
+Distance Vector Routing
+
+algorithm
+
+1 start 
+2 create a structure that contains distance matrix and from  matrix
+3 input number of nodes and cost matrix
+4 initialize distance matrix to zero
+5 do while count!=0
+a initialize count to zero
+b iterate over each node(i) and each destination node(j) and each intermediate node(k)
+c if distance from i to j is greater than sum of distance from i to k and k to j, update distance and routing information
+d increment count if update was made
+6 print the state of router and its corresponding distances and routes
+7 end
+
+
+code
+
+
+#include<stdio.h>
+struct node
+{
+unsigned dist[20];
+unsigned from[20];
+}rt[10];
+int main()
+{
+int dmat[20][20];
+int n,i,j,k,count=0;
+printf("\nEnter the number of nodes : ");
+scanf("%d",&n);
+printf("\nEnter the cost matrix :\n");
+for(i=0;i<n;i++)
+for(j=0;j<n;j++)
+{
+scanf("%d",&dmat[i][j]);
+dmat[i][i]=0;
+rt[i].dist[j]=dmat[i][j];
+rt[i].from[j]=j;
+}
+do
+{
+count=0;
+for(i=0;i<n;i++)
+for(j=0;j<n;j++)
+for(k=0;k<n;k++)
+if(rt[i].dist[j]>dmat[i][k]+rt[k].dist[j])
+{
+rt[i].dist[j]=rt[i].dist[k]+rt[k].dist[j];
+rt[i].from[j]=k;
+count++;
+}
+}while(count!=0);
+for(i=0;i<n;i++)
+{
+printf("\n\nState value for router %d is \n",i+1);
+for(j=0;j<n;j++)
+{
+printf("\t\nnode %d via %d Distance%d",j+1,rt[i].from[j]+1,rt[i].dist[j]);
+}
+}
+printf("\n\n");
+}  
+
+
+
+
+************
+
+
+
+Link State Routing
+
+algorithm
+
+1 input the number of vertices(n)
+2 input nxn adjacency mattrix(G) and starting node(u) from user
+3 call dijstra(G,n,u)
+
+dijstra(G,n,u)
+
+1 set distance of start node as zero and mark as visited
+2 initialize count to 1
+3 start a loop that continues until count is less than n-1  
+a set mindistance to infinity
+b find node with minimum distance among nodes that have not been visited yet.mark it as visited
+c update distance and pred arrays of neighbouring nodes of the node if better path is found
+4 increment count by 1
+5 after the loop,print the shortest path and dsitance for each node
+
+
+code
+
+
+#include<stdio.h>
+//#include<conio.h>
+#define INFINITY 9999
+#define MAX 10
+void dijkstra(int G[MAX][MAX],int n,int startnode);
+int main()
+{
+int G[MAX][MAX],i,j,n,u;
+printf("Enter no. of vertices:");
+scanf("%d",&n);
+printf("\nEnter the adjacency matrix:\n");
+for(i=0;i<n;i++)
+for(j=0;j<n;j++)
+scanf("%d",&G[i][j]);
+printf("\nEnter the starting node:");
+scanf("%d",&u);
+dijkstra(G,n,u);
+return 0;
+}
+void dijkstra(int G[MAX][MAX],int n,int startnode)
+{
+int cost[MAX][MAX],distance[MAX],pred[MAX];
+int visited[MAX],count,mindistance,nextnode,i,j;
+//pred[] stores the predecessor of each node
+//count gives the number of nodes seen so far
+//create the cost matrix
+for(i=0;i<n;i++)
+for(j=0;j<n;j++)
+if(G[i][j]==0)
+cost[i][j]=INFINITY;
+else
+cost[i][j]=G[i][j];
+//initialize pred[],distance[] and visited[]
+for(i=0;i<n;i++)
+{
+distance[i]=cost[startnode][i];
+pred[i]=startnode;
+visited[i]=0;
+}
+distance[startnode]=0;
+visited[startnode]=1;
+count=1;
+while(count<n-1)
+{
+mindistance=INFINITY;
+//nextnode gives the node at minimum distance
+for(i=0;i<n;i++)
+if(distance[i]<mindistance&&!visited[i])
+{
+mindistance=distance[i];
+nextnode=i;
+}
+//check if a better path exists through nextnode
+visited[nextnode]=1;
+for(i=0;i<n;i++)
+if(!visited[i])
+if(mindistance+cost[nextnode][i]<distance[i])
+{
+distance[i]=mindistance+cost[nextnode][i];
+pred[i]=nextnode;
+}
+count++; }
+//print the path and distance of each node
+for(i=0;i<n;i++){
+if(i!=startnode)
+{
+printf("\nDistance of node%d=%d",i,distance[i]);
+printf("\nPath=%d",i);
+j=i;
+do
+{ j=pred[j];
+printf("<-%d",j);
+}while(j!=startnode);
+}
+printf("\n");
+}
+}
+
+
+
+
+
+
+**************
+
+
+
+
+
+
+
+9. Implementation of Simple Mail Transfer Protocol
+
+
+Aim: To implement a subset of simple mail transfer protocol (SMTP) using UDP
+Description:
+SMTP provides for mail exchanges between users on the same or different computers.
+The SMTP client and server can be divided into two components: user agent (UA) and
+mail transfer agent (MTA). The user agent is a program used to send and receive mail.
+The actual mail transfer is done through mail transfer agents. To send mail, a system
+must have client MTA, and to receive mail, a system must have a server MTA. SMTP
+uses commands and responses to transfer messages between an MTA client and MTA
+server. Commands are sent from the client to the server. It consists of a keyword
+followed by zero or more arguments. Examples: HELO, MAIL FROM, RCPT TO etc.
+Responses are sent from the server to the client. It is a three-digit code that may be
+followed by additional textual information. The process of transferring a mail message
+occurs in three phases: connection establishmnet, mail transfer, and connection
+termination.
+Although the transport protocol specified for SMTP is TCP, in this experiment, UDP
+protocol will be used.
+
+
+Algorithm:
+
+SMTP Client
+1. Create the client UDP socket.
+2. Send the message “SMTP REQUEST FROM CLIENT” to the server. This is
+done so that the server understands the address of the client.
+3. Read the first message from the server using client socket and print it.
+4. The first command HELO<”Client's mail server address”> is sent by the client
+5. Read the second message from the server and print it.
+6. The second command MAIL FROM:<”email address of the sender”> is sent by the client.
+7. Read the third message from the server and print it.
+8. The third command RCPT TO:<”email address of the receiver”> is sent by the client
+9. Read the fourth message from the server and print it.
+10. The fourth command DATA is sent by the client.
+11. Read the fifth message from the server and print it.
+12. Write the messages to the server and end with “.”
+13. Read the sixth message from the server and print it.
+14. The fifth command QUIT is sent by the client.
+15. Read the seventh message from the server and print it.
+
+
+Server
+
+
+1. Create the server UDP socket
+2. Read the message from the client and gets the client's address
+3. Send the first command to the client.
+220 “server name”
+4. Read the first message from the client and print it.
+5. Send the second command to the client.
+250 Hello “client name”
+6. Read the second message from client and print it.
+7. Send the third command to the client.
+250 “client email address “ Sender ok
+8. Read the third message from client and print it
+9. Send the fourth command to the client
+250 “server email address” Recepient ok
+10. Read the fourth message from client and print it
+11. Send the fifth command to the client
+354 Enter mail, end with “.” on a line by itself
+12. Read the email text from the client till a “.” is reached
+13. Send the sixth
+command to the client
+250 Message accepted for delivery
+
+
+code
+
+
+
+Server Program (smtpserver.c)
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <string.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+#include <stdbool.h>
+#define domain "server.smtp.com"
+int receive_image(int socket)
+{
+ int recvsize;
+ int size;
+ int readsize;
+ int writesize;
+ int packetindex;
+ int status;
+ char img_array[10240];
+ FILE *fpimage;
+ do{
+ status = read(socket, &size, sizeof(int));
+ }while(status<0);
+ printf("RECEIVED :\nPacket is received!");
+ //printf("Packet Size : %i\n",status);
+ //printf("Image Size : %i\n",size);
+ printf(" \n");
+ char buffer[] = "Success!";
+ do{
+ status = write(socket, &buffer, sizeof(int));
+ }while(status<0);
+ printf("Reply is sent successfully!\n");
+ printf(" \n");
+ fpimage = fopen("received.jpeg", "w");
+ if(fpimage == NULL)
+ {
+ printf("Error occured while opening the Image file!\n");
+ return -1;
+}
+ struct timeval timeout = {10,0};
+ fd_set fd_s;
+ int bufferfd;
+ while(recvsize < size) {
+ FD_ZERO(&fd_s);
+ FD_SET(socket,&fd_s);
+ bufferfd = select(FD_SETSIZE,&fd_s,NULL,NULL,&timeout);
+ if (bufferfd < 0)
+ printf("Error occured due to bad file descriptor set.\n");
+ if (bufferfd == 0)
+ printf("Error occured due to buffer read timeout expired.\n");
+ if(bufferfd > 0)
+ {
+ do{
+ readsize = read(socket, img_array, 10240);
+ }while(readsize < 0);
+ //printf("Packet Received number : %i\n",packetindex);
+ //printf("Packet size : %i\n",readsize);
+ writesize = fwrite(img_array,1,readsize, fpimage);
+ printf("Image size written : %i\n",writesize);
+ if(readsize!=writesize)
+ {
+ printf("Error occured while reading!\n");
+}
+ recvsize += readsize;
+ packetindex++;
+ printf("Total Received Image size : %i\n",recvsize);
+ printf(" \n");
+ }
+ }
+}
+int main(int argc, char *argv[])
+{
+ int sockfd, newsockfd, n, portno, clilen;
+ struct sockaddr_in serv_addr, cli_addr;
+ char servers[2][100] = {"smtp.gmail.com","smtp.yahoo.com"};
+ char buff[10240]; //used for buffer the incoming data from client
+ char command[50]; //used to read command RECEIVED from client
+ sockfd = socket(AF_INET, SOCK_STREAM,0);
+ if(sockfd < 0)
+ {
+ perror("\nError occured while creating the socket!\n");
+ }
+ bzero((char *) &serv_addr, sizeof(serv_addr));
+portno = atoi(argv[1]);
+serv_addr.sin_family = AF_INET;
+serv_addr.sin_addr.s_addr = INADDR_ANY;
+serv_addr.sin_port = htons(portno);
+ if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
+{
+perror("\nSocket binding failed!\n");
+}
+ listen(sockfd,5);
+ clilen = sizeof(cli_addr);
+ newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+ if (newsockfd < 0)
+ {
+perror("\nError occured while accepting on socket!\n");
+ }
+ //Implementing responses which SMTP Server sends to Client for Acknowledgement in
+the process of Email Receiving
+ do
+ {
+ bzero(buff,10240);
+ n = read(newsockfd,buff,10239);
+ if (n < 0)
+ {
+ printf("\nError occured while reading from socket!\n");
+ break;
+ }
+ else
+ {
+ buff[n] = '\0';
+ if(strstr(buff,"HELO")!=NULL)
+ {
+ printf("RECEIVED : %s",buff);
+ bzero(buff,10240);
+ strcpy(buff,"250 Hello ");
+ strcat(buff, domain);
+ printf("SENT : %s\n\n",buff);
+ n = write(newsockfd,buff,strlen(buff));
+ if (n<0) { perror("Error occured while writing to socket!"); }
+}
+ else if(strstr(buff,"MAIL FROM")!=NULL)
+ {
+ printf("RECEIVED : %s",buff);
+ bzero(buff,10240);
+ strcpy(buff,"250 OK");
+ printf("SENT : %s\n\n",buff);
+ n = write(newsockfd,buff,strlen(buff));
+ if (n<0) { perror("Error occured while writing to socket!"); }
+}
+ else if(strstr(buff,"RCPT TO")!=NULL)
+ {
+ printf("RECEIVED : %s",buff);
+ bzero(buff,10240);
+ strcpy(buff,"250 OK");
+ printf("SENT : %s\n\n",buff);
+ n = write(newsockfd,buff,strlen(buff));
+ if (n<0) { perror("Error occured while writing to socket!"); }
+}
+ else if(strstr(buff,"DATA")!=NULL)
+ {
+ printf("RECEIVED : %s",buff);
+ bzero(buff,10240);
+ strcpy(buff,"354 Send message content; end with <CRLF>.<CRLF>");
+ printf("SENT : %s\n\n",buff);
+ n = write(newsockfd,buff,strlen(buff));
+ if (n < 0) { perror("Error occured while writing to socket!"); }
+ bzero(buff,10240);
+ n = read(newsockfd,buff,10239);
+ if (n < 0){ printf("\nError occured while reading from socket!\n"); break; }
+ printf("\n\n----------| Received Email Header & Content |----------\n\n%s\n",buff);
+ printf("-------------------------------------------------------\n\n");
+ bzero(buff,10240);
+ n = read(newsockfd,buff,10239);
+ if (n < 0){ printf("\nError occured while reading from socket!\n"); break; }
+ if(strstr(buff,".")!=NULL){
+printf("RECEIVED : %s",buff);
+ bzero(buff,10240);
+strcpy(buff,"250 OK, message accepted for delivery.");
+printf("SENT : %s\n\n",buff);
+n = write(newsockfd,buff,strlen(buff));
+if (n < 0) { perror("Error occured while writing to socket!"); }
+ }
+}
+ else if(strstr(buff,"Attachment") != NULL)
+ {
+printf("RECEIVED : %s",buff);
+ bzero(buff,10240);
+ strcpy(buff,"420 Send attachment");
+ printf("SENT : %s\n\n",buff);
+ n = write(newsockfd,buff,strlen(buff));
+ if (n < 0) { perror("Error occured while writing to socket!"); }
+ if(receive_image(newsockfd) != -1)
+ {
+ printf("Attached Image file received!\n");
+ bzero(buff,10240);
+ strcpy(buff,"250 Image received successfully");
+ printf("SENT : %s\n\n",buff);
+ n = write(newsockfd,buff,strlen(buff));
+ if (n < 0) { perror("Error occured while writing to socket!"); }
+ }
+}
+ else if(strstr(buff,"QUIT") != NULL)
+ {
+ break;
+ }
+ }
+ }while(strcmp(buff,"QUIT") != 0);
+ printf("RECEIVED : %s",buff);
+ bzero(buff,10240);
+ strcpy(buff,"221 Bye");
+ printf("SENT : %s\n\n",buff);
+ n = write(newsockfd,buff,strlen(buff));
+ if (n<0) { perror("Error occured while writing to socket!"); }
+ printf("\nConnection closed successfully with the client!\n\n");
+ return 0;
+}
+
+
+
+Client Program (smtpclient.c)
+
+
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <unistd.h>
+#include <time.h>
+#define domain "server.smtp.com"
+char mail_from[100];
+char mail_to[100];
+void send_image(int socket)
+{
+ FILE *fpimage;
+int size;
+int readsize;
+int status;
+int packet_index = 1;
+char send_buffer[10239];
+char read_buffer[256];
+ char f_name[100];
+ printf("\nEnter Image Path/Image file name : ");
+ scanf("%s",f_name);
+ fpimage = fopen(f_name, "r");
+printf("\nCLIENT: \nGetting Image Size...\n");
+ if(fpimage == NULL){
+printf("Error occured while opening Image File!\n");
+}
+ fseek(fpimage, 0, SEEK_END);
+size = ftell(fpimage);
+fseek(fpimage, 0, SEEK_SET);
+printf("Total Image size: %i\n",size);
+printf("Sending Image Size\n");
+write(socket, (void *)&size, sizeof(int));
+printf("Sending Image as a byte array...");
+ do{
+ status=read(socket, &read_buffer , 255);
+ //printf("Bytes read: %i\n",status);
+}while(status < 0);
+ //printf("Data successfully received in socket!\n");
+//printf("Socket Data: %s\n", read_buffer);
+ while(!feof(fpimage))
+ {
+ readsize = fread(send_buffer, 1, sizeof(send_buffer)-1, fpimage);
+ do{
+ status = write(socket, send_buffer, readsize);
+ }while(status<0);
+ //printf("Packet number: %i\n",packet_index);
+ //printf("Packet size sent: %i\n",readsize);
+ printf(" \n");
+ printf(" \n");
+ packet_index++;
+ bzero(send_buffer, sizeof(send_buffer));
+ }
+}
+char * Mail_Header(char *from,char *to,char *sub,char *content)
+{
+ time_t t;
+ time(&t);
+ char *header = NULL;
+ char date[26];
+ char DATE_h[8 + strlen(date)];
+ char sender[8 + strlen(from)]; //FROM: sender's_email\r\n
+ char recep[6 + strlen(to)]; //TO: recepient's_email\r\n
+ char subject[11 + strlen(sub)];
+ char content_a[1 + strlen(content) + 2 + 1 + 1];
+ strftime(date, (33), "%a %d %b %Y %H:%M:%S",localtime(&t));
+ sprintf(DATE_h,"DATE: %s\r\n",date);
+ sprintf(sender,"FROM: %s\r\n",from);
+ sprintf(subject,"Subject: %s\r\n",sub);
+ sprintf(recep,"TO: %s\r\n",to);
+ //extra \n is used to end the header part
+ sprintf(content_a,"%s\r\n",content);
+ int header_length = strlen(DATE_h) + strlen(sender) + strlen(subject) + strlen(recep) +
+strlen(content_a);
+ header = (char *) malloc(header_length * sizeof(char));
+ memcpy(&header[0], &DATE_h, strlen(DATE_h));
+ memcpy(&header[0 + strlen(DATE_h)], &sender , strlen(sender));
+ memcpy(&header[0 + strlen(DATE_h) + strlen(sender)], &subject , strlen(subject));
+ memcpy(&header[0 + strlen(DATE_h) + strlen(sender) + strlen(subject)], &recep ,
+strlen(recep));
+ memcpy(&header[0 + strlen(DATE_h) + strlen(sender) + strlen(subject) + strlen(recep)],
+&content_a , strlen(content_a));
+ return header;
+}
+int main(int argc, char *argv[])
+{
+ int socket_id,n;
+ int portno;
+ struct sockaddr_in serv_addr;
+ struct hostent *server;
+ char cname[256];
+ char buff[10240];
+ if(argc < 3)
+ {
+ perror("\nPlease enter the hostname and port number.\n");
+ exit(0);
+ }
+ portno = atoi(argv[2]);
+ socket_id = socket(AF_INET,SOCK_STREAM, 0);
+ if(socket_id < 0)
+ {
+ perror("\nError occured while opening the socket!\n");
+ exit(0);
+}
+ server = gethostbyname(argv[1]);
+ if(server == NULL)
+ {
+ perror("\nError: No such host found!\n");
+ exit(0);
+ }
+ bzero((char *) &serv_addr, sizeof(serv_addr));
+ serv_addr.sin_family = AF_INET;
+ bcopy((char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr,server->h_length);
+ serv_addr.sin_port = htons(portno);
+ //connect to the server
+ int connect_id;
+ connect_id = connect(socket_id,(struct sockaddr *)&serv_addr, sizeof(serv_addr));
+ if(connect_id < 0)
+ {
+ perror("Error occured while connecting to server...\n");
+ }
+ //Implementing commands which are used b/w Client and SMTP Server for
+communication
+ do
+ {
+ printf("Enter the command : ");
+ intake: gets(cname);
+ //cname[strlen(cname) + 1] = '\0';
+ char code[4]; //to store the 3 digit response code received from server
+ if(strcasecmp(cname,"HELO") == 0)
+ {
+ bzero(buff,10240);
+ strcpy(buff,"HELO ");
+ strcat(buff, domain);
+ strcat(buff,"\r\n");
+ n = write(socket_id,buff,strlen(buff));
+ if(n < 0)
+ {
+ printf("\nError occured while writing to socket!\n");
+ }
+ printf("\nCLIENT : %s",buff); //HELO domain
+ bzero(buff,10240);
+ n = read(socket_id,buff,10239);
+ if(n < 0)
+ {
+ printf("\nError occured while reading from socket!\n");
+ }
+ printf("SERVER : %s\n",buff); //250 Hello domain
+ //checking error
+ code[0] = buff[0];
+ code[1] = buff[1];
+ code[2] = buff[2];
+ code[3] = '\0';
+ if(strcmp(code,"250") == 0)
+ {
+ printf("\nGo to next command...\n\n");
+ }
+ else{
+ printf("\nError occured!\n\n");
+ }
+ fflush(stdin);
+ }
+ else if(strcasecmp(cname,"MAIL FROM") == 0)
+ {
+ bzero(buff,10240);
+ printf("\nEnter Sender Email id : ");
+ scanf("%s",mail_from);
+ strcpy(buff,"MAIL FROM:<");
+ strcat(buff,mail_from);
+ strcat(buff,">");
+ strcat(buff,"\r\n");
+ n = write(socket_id,buff,strlen(buff));
+ if(n < 0)
+ {
+ printf("\nError occured while writing to socket!\n");
+ }
+ printf("\nCLIENT : %s",buff); //MAIL FROM:<your email id>
+ bzero(buff,10240);
+ n = read(socket_id,buff,10239);
+ if(n < 0)
+ {
+ printf("\nError occured while reading from socket!\n");
+ }
+ printf("SERVER : %s\n",buff); //250 OK
+ //checking error
+ code[0] = buff[0];
+ code[1] = buff[1];
+ code[2] = buff[2];
+ code[3] = '\0';
+ if(strcmp(code,"250") == 0)
+ {
+ printf("\nGo to next command...\n\n");
+ }
+ else{
+ printf("\nError occured!\n\n");
+}
+ fflush(stdin);
+ }
+ else if(strcasecmp(cname,"RCPT TO") == 0)
+ {
+ bzero(buff,10240);
+ printf("\nEnter Recipient Email id : ");
+ scanf("%s",mail_to);
+ strcpy(buff,"RCPT TO:<");
+ strcat(buff,mail_to);
+ strcat(buff,">");
+ strcat(buff,"\r\n");
+ n = write(socket_id,buff,strlen(buff));
+ if(n < 0)
+ {
+ printf("\nError occured while writing to socket!\n");
+ }
+ printf("\nCLIENT : %s",buff); //RCPT TO:<your email id>
+ bzero(buff,10240);
+ n = read(socket_id,buff,10239);
+ if(n < 0)
+ {
+ printf("\nError occured while reading from socket!\n");
+ }
+ printf("SERVER : %s\n",buff); //250 OK
+ //checking error
+ code[0] = buff[0];
+ code[1] = buff[1];
+ code[2] = buff[2];
+ code[3] = '\0';
+ if(strcmp(code,"250") == 0)
+ {
+ printf("\nGo to next command...\n\n");
+ }
+ else{
+ printf("\nError occured!\n\n");
+}
+ fflush(stdin);
+ }
+ else if(strcasecmp(cname,"DATA") == 0)
+ {
+ bzero(buff,10240);
+ strcpy(buff,"DATA");
+ strcat(buff,"\r\n");
+ n = write(socket_id,buff,strlen(buff));
+ if(n < 0)
+ {
+ printf("\nError occured while writing to socket!\n");
+ }
+ printf("\nCLIENT : %s",buff); //DATA
+ bzero(buff,10240);
+ n = read(socket_id,buff,10239);
+ if(n < 0)
+ {
+ printf("\nError occured while reading from socket!\n");
+ }
+ printf("SERVER : %s\n",buff); //354 Send message content; end with
+<CRLF>.<CRLF>
+ //checking error
+ code[0] = buff[0];
+ code[1] = buff[1];
+ code[2] = buff[2];
+ code[3] = '\0';
+ if(strcmp(code,"354") == 0)
+ {
+ printf("\nReady to send header data!\n\n");
+ }
+ else{
+ printf("\nError occured!\n\n");
+ }
+ //creating a mail header
+ char sub[150];
+ char content[450];
+ printf("\nEnter Subject : ");
+ scanf("%[^\n]",sub);
+ printf("\nEnter content : (Press Tab and Enter Key to end)\n");
+ scanf("%[^\t]",content);
+ bzero(buff,10240);
+ //Mail_header function declared above
+ strcpy(buff, Mail_Header(mail_from,mail_to,sub,content)); //assigning header to
+buffer
+ n = write(socket_id,buff,strlen(buff));
+ if(n < 0)
+ {
+ printf("\nError occured while writing to socket!\n");
+ }
+ printf("\nCLIENT : ====| Mail header & content |====\n%s\n",buff); //header
+content
+ bzero(buff,10240);
+ strcpy(buff,".\r\n");
+ n = write(socket_id,buff,strlen(buff));
+ if(n < 0)
+ {
+ printf("\nError occured while writing to socket!\n");
+ }
+ bzero(buff,10240);
+ n = read(socket_id,buff,10239);
+ if(n < 0)
+ {
+ printf("\nError occured while reading from socket!\n");
+ }
+ printf("SERVER : %s\n",buff); //250 OK
+ //checking error
+ code[0] = buff[0];
+ code[1] = buff[1];
+ code[2] = buff[2];
+ code[3] = '\0';
+ if(strcmp(code,"250") == 0)
+ {
+ printf("\nGo to next command...\n\n");
+ }
+ else{
+ printf("\nError occured!\n\n");
+}
+ fflush(stdin);
+ }
+ else if(strcasecmp(cname,"ATTACHMENT") == 0){
+ bzero(buff,10240);
+strcpy(buff,"Attachment");
+strcat(buff,"\r\n");
+n = write(socket_id,buff,strlen(buff));
+if(n < 0)
+{
+ printf("\nError occured while writing to socket!\n");
+}
+printf("\nCLIENT : %s",buff); //DATA
+bzero(buff,10240);
+n = read(socket_id,buff,10239);
+if(n < 0)
+{
+ printf("\nError occured while reading from socket!\n");
+}
+printf("SERVER : %s\n",buff); //420 send Attachment
+code[0] = buff[0];
+code[1] = buff[1];
+code[2] = buff[2];
+code[3] = '\0';
+if(strcmp(code,"420") == 0)
+{
+ printf("\nReady to send image!\n\n");
+}
+else{
+ printf("\nError occured!\n\n");
+}
+send_image(socket_id);
+bzero(buff,10240);
+n = read(socket_id,buff,10239);
+if(n < 0)
+{
+ printf("\nError occured while reading from socket!\n");
+}
+printf("SERVER : %s\n\n",buff);
+ }
+ else if(strcasecmp(cname,"QUIT") == 0)
+ {
+ bzero(buff,10240);
+ strcpy(buff,"QUIT");
+ strcat(buff,"\r\n");
+ n = write(socket_id,buff,strlen(buff));
+ if(n < 0)
+ {
+ printf("\nError occured while writing to socket!\n");
+ }
+ printf("\nCLIENT : %s",buff); //QUIT
+ bzero(buff,10240);
+ n = read(socket_id,buff,10239);
+ if(n < 0)
+ {
+ printf("\nError occured while reading from socket!\n");
+ }
+ printf("SERVER : %s\n",buff); //221 Bye
+ //checking error
+ code[0] = buff[0];
+ code[1] = buff[1];
+ code[2] = buff[2];
+ code[3] = '\0';
+ if(strcmp(code,"221") == 0)
+ {
+ printf("\nConnection closed successfully with SMTP Server!\n\n");
+ }
+ else{
+ printf("\nError occured!\n\n");
+}
+ fflush(stdin);
+ }
+ else
+ {
+strcpy(cname,"");
+goto intake;
+ }
+ }while(strcmp(cname,"QUIT") != 0);
+}
+
+
+
+
+
+
+
+
+
+
+***************************
+
+
+
+
+
+
+
+
+
+
+11. Implementation of File Transfer Protocol
+
+
+Aim: To develop a concurrent file server which will provide the file requested by client
+if it exists. If not, server sends appropriate message to the client. Server sends its process
+ID (PID) to clients for display along with file or the message.
+Description:
+The file server creates listening sockets on two ports that have consecutive port numbers.
+One is the listening socket for control connection and the other is the listening socket for
+data connection. These sockets have descriptors listen_control and listen_data
+respectively. The client creates a socket and connects to the server using TCP
+connection. The client socket descriptor is stored in sock_ctrl. The server creates a
+connection socket when the client makes a TCP connection with the server. This
+connection socket is stored in sock_ctrl. This connection is for control information to
+pass between client and server. Next, the server forks a child process. Since the child is a
+perfect image of its parent, the child process will also have descriptors listen_control,
+listen_data and sock_ctrl. The control connection will also be duplicated between the
+client and the child process. The child process closes its listening socket for control
+connection, i.e; listen_control. The parent server process closes its connection socket for
+the control connection i.e; sock_ctrl. The client now makes a TCP connection with the
+server for transferring data is stored in sock_data. The connection socket for the data
+connection is stored in sock_data in the server child process.
+
+
+Algorithm
+
+
+Client
+1. Create the client TCP control connection to a port (port_num) of the
+server with the client socket descriptor sock_ctrl.
+2. `while(1)
+{
+2.1 Create client socket descriptor sock_data for the data connection with
+server on another port (portnum + 1). For each file transfer a new data
+connection is required.
+2.2 Read the command from the terminal given by the user
+2.3 Send the command to the server using control socket sock_ctrl.
+2.4 If command == “close”
+2.5 close sock_data and sock_ctrl
+break
+2.6 Enter the filename using the keyboard
+2.7 Write the filename using control socket sock_ctrl to the server.
+2.8 Use while(connect(...) < 0) to wait for the data connection.
+2.9 read data using sock_data (file contents) from the server and write to the file
+2.10If file does not exist print the process id of server
+}
+
+
+Server
+
+
+1. Initialize variable file_present to 1
+2. Create listening socket for the control connection on port (port_num) and store it in
+listen_control.
+3. Create a listening socket for the data connection on port (port_num +1) and store it in
+listen_data
+4. while (1)
+{
+4.1 accepts the client control connection and returns the connect socket descriptor
+sock_ctrl
+4.2 fork a child process
+4.2.1 if(childprocess)
+{
+close listening socket listen_control
+while(1)
+{
+read command from the client on the control connection
+if command == “close”
+break
+else
+}
+read the filename from the client
+using control connection open
+the file
+if (no file)
+form a string “@FILE NOT FOUND
+PROCESS ID = getprocess id” and store it in
+variable buffer
+file_present = 0;
+accept the data connection and return the socket
+descriptor sock_data
+if(file_present)
+read file contents and write to sock_data
+form a string “FILE filename RECEIVED
+FROM SERVER WITH PROCESS ID =
+getprocess id” and store it in variable
+buffer
+else
+file_present = 1;
+write buffer using sock_data to the client
+close sock_data
+close(sock_ctrl)
+close(listen_data)
+child process exits
+}
+close( sock_ctrl)
+}
+5. close(listen_control);
+6. close(listen_data);
+14. Read the fifth message from the client and print it.
+15. Send the seventh command to the client
+221 “server name” closing connection
+
+
+
+code
+
+
+
+Server Program (ftpsr.c)
+
+
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+#define BUFSIZE 1024
+#define PORT_ADDR 6000
+#define QSIZE 5
+void main()
+{
+ struct sockaddr_in server_address, client_address;
+ int i, socket_descriptor_1, socket_descriptor_2, size_of_client_address, file_descriptor,
+character_count;
+ char buffer_1[BUFSIZE], buffer_2[BUFSIZE], pid_str[10];
+ socket_descriptor_1 = socket(AF_INET, SOCK_STREAM, 0);
+ server_address.sin_family = AF_INET;
+ server_address.sin_port = htons(PORT_ADDR);
+ server_address.sin_addr.s_addr = htonl(INADDR_ANY);
+ bind(socket_descriptor_1, (struct sockaddr *)&server_address, sizeof(server_address));
+ listen(socket_descriptor_1, QSIZE);
+ size_of_client_address = sizeof(client_address);
+ socket_descriptor_2 = accept(socket_descriptor_1, (struct sockaddr *)&client_address,
+&size_of_client_address);
+ printf("\nRequest accepted.....\n");
+ close(socket_descriptor_1);
+ snprintf(pid_str, sizeof(pid_str), "%d", getpid());
+ character_count = read(socket_descriptor_2, buffer_1, BUFSIZE);
+ buffer_1[character_count] = '\0';
+ printf("\nFilename is %s", buffer_1);
+ if ((file_descriptor = open(buffer_1, O_RDONLY)) >= 0)
+ {
+ printf("\nFile opened.....");
+ character_count = read(file_descriptor, buffer_2, BUFSIZE);
+ while (character_count > 0)
+ {
+ printf("\nSending file.....");
+ write(socket_descriptor_2, buffer_2, character_count);
+ printf("\nPrinting content of file:\n");
+ for (i = 0; i < character_count; i++)
+ printf("%c", buffer_2[i]);
+ printf("\n");
+ if (i == character_count)
+ break;
+ }
+ }
+ else
+ {
+ printf("\nRequested file is not present....!!!\n");
+ write(socket_descriptor_2, "", 1); // Sending empty response to indicate file not found
+}
+ close(file_descriptor);
+ write(socket_descriptor_2, pid_str, strlen(pid_str)); // Sending process ID to the client
+ close(socket_descriptor_2);
+}
+
+
+
+Client Program (ftpcl.c)
+
+
+
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+void main()
+{
+ struct sockaddr_in server_address;
+ int socket_descriptor, character_count, file_length, i;
+ char buffer_1[3024], buffer_2[3000], pid_str[10];
+ socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
+ server_address.sin_family = AF_INET;
+ server_address.sin_port = htons(6000);
+ server_address.sin_addr.s_addr = inet_addr("127.0.0.1");
+ connect(socket_descriptor, (struct sockaddr *)&server_address, sizeof(server_address));
+ printf("\nEnter the filename:\n");
+ character_count = read(0, buffer_1, sizeof(buffer_1));
+ buffer_1[character_count - 1] = '\0';
+ write(socket_descriptor, buffer_1, character_count);
+ file_length = read(socket_descriptor, buffer_2, sizeof(buffer_2));
+ if (file_length == 0)
+ printf("\nFile not present....!!!");
+ else
+ {
+ printf("\nPrinting content of file:\n");
+ for (i = 0; i < file_length; i++)
+ printf("%c", buffer_2[i]);
+ printf("\n");
+ read(socket_descriptor, pid_str, sizeof(pid_str));
+ printf("Received process ID from server: %s\n", pid_str);
+ }
+ close(socket_descriptor);
+} 
+
+
+
+
+
+
+
+**************
+
+
+
+
+
+
+
+leaky bucket algorithm
+
+algorithm
+
+1 start
+2 create a buffer of size N
+3 set a constant output rate r
+4 for each packet that arrives of size k
+a if the buffer is empty ,add the packet to the buffer and start a timer with time k/r
+b if the buffer has room,queue the packet
+c if the buffer is full discard the packet
+5 when timer hits 0
+a send the packet
+b if ther3e are packets left,set the timer to k/r where k is the size of the next packet 
+6 end
+
+
+
+code
+
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#define NOF_PACKETS 10
+int my_rand(int a) {
+ int rn = (rand() % 10) % a;
+ return rn == 0 ? 1 : rn;
+}
+int main() {
+ int packet_sz[NOF_PACKETS], i, clk, b_size, o_rate, p_sz_rm = 0, p_sz, p_time, op;
+ for (i = 0; i < NOF_PACKETS; ++i)
+ packet_sz[i] = my_rand(6) * 10;
+ for (i = 0; i < NOF_PACKETS; ++i)
+ printf("\npacket[%d]: %d bytes\t", i, packet_sz[i]);
+ printf("\nEnter the Output rate: ");
+ scanf("%d", &o_rate);
+ printf("Enter the Bucket Size: ");
+ scanf("%d", &b_size);
+ for (i = 0; i < NOF_PACKETS; ++i) {
+ if ((packet_sz[i] + p_sz_rm) > b_size) {
+ if (packet_sz[i] > b_size)
+ printf("\n\nIncoming packet size (%d bytes) is greater than bucket capacity (%d
+bytes) - PACKET REJECTED", packet_sz[i], b_size);
+ else
+ printf("\n\nBucket capacity exceeded - PACKETS REJECTED!!");
+ } else {
+ p_sz_rm += packet_sz[i];
+ printf("\n\nIncoming Packet size: %d", packet_sz[i]);
+ printf("\nBytes remaining to transmit: %d", p_sz_rm);
+ p_time = my_rand(4) * 10;
+ printf("\nTime left for transmission: %d units", p_time);
+ for (clk = 10; clk <= p_time; clk += 10) {
+ sleep(1);
+ if (p_sz_rm) {
+if (p_sz_rm <= o_rate)
+op = p_sz_rm, p_sz_rm = 0;
+else
+op = o_rate, p_sz_rm -= o_rate;
+printf("\nPacket of size %d transmitted", op);
+printf(" ---- Bytes remaining to transmit: %d", p_sz_rm);
+ } else {
+printf("\nTime left for transmission: %d units", p_time - clk);
+printf("\nNo packets to transmit!!");
+ }
+ }
+ }}
+ return 0;
+}
+
+
+
